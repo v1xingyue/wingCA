@@ -45,7 +45,7 @@ func InitRootCA(pkiName pkix.Name) error {
 		Bytes: caBytes,
 	})
 
-	ioutil.WriteFile("ssl/rootCA.pem", caPEM.Bytes(), 0755)
+	ioutil.WriteFile(rootCACertPath, caPEM.Bytes(), 0755)
 
 	caPrivKeyPEM := new(bytes.Buffer)
 	pem.Encode(caPrivKeyPEM, &pem.Block{
@@ -53,6 +53,6 @@ func InitRootCA(pkiName pkix.Name) error {
 		Bytes: x509.MarshalPKCS1PrivateKey(caPrivKey),
 	})
 
-	ioutil.WriteFile("ssl/rootCA.key", caPrivKeyPEM.Bytes(), 0700)
+	ioutil.WriteFile(rootCAKeyPath, caPrivKeyPEM.Bytes(), 0700)
 	return nil
 }

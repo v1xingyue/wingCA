@@ -1,11 +1,14 @@
 package rootCA
 
 import (
+	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
 	"io/ioutil"
+
+	"software.sslmate.com/src/go-pkcs12"
 )
 
 // ParseCertificate 解析 证书
@@ -40,4 +43,25 @@ func ParseKey(path string, password string) (*rsa.PrivateKey, error) {
 	}
 
 	return x509.ParsePKCS1PrivateKey(privPemBytes)
+}
+
+// MakePKCS12 生成 客户端通用的 p12 证书
+// openssl pkcs12 -export -clcerts -in ssl/client.cert -inkey ssl/client.key -out client.p12
+func MakePKCS12(certPath, keyPath, password, p12Path string) ([]byte, error) {
+	privateKey, err := ParseKey(keyPath, "")
+	if err != nil {
+		return nil, err
+	}
+	cert, err := ParseCertificate(certPath)
+	if err != nil {
+		return nil, err
+	}
+
+	rootCACerts, err := ParseCertificate(rootCACertPath)
+	if err != nil {
+		return nil, err
+	}
+
+	pkbytes, err := pkcs12.Encode(rand.Reader, privateKey, cert, []*x509.Certificate{rootCACerts}, password)
+	return pkbytes, err
 }
