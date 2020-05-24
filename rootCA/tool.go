@@ -47,7 +47,7 @@ func ParseKey(path string, password string) (*rsa.PrivateKey, error) {
 
 // MakePKCS12 生成 客户端通用的 p12 证书
 // openssl pkcs12 -export -clcerts -in ssl/client.cert -inkey ssl/client.key -out client.p12
-func MakePKCS12(certPath, keyPath, password, p12Path string) ([]byte, error) {
+func MakePKCS12(certPath, keyPath, password string) ([]byte, error) {
 	privateKey, err := ParseKey(keyPath, "")
 	if err != nil {
 		return nil, err

@@ -20,29 +20,34 @@ func main() {
 		CommonName:    "SomeBodySuperCA",
 	}
 
-	if ca, err := rootCA.ParseCertificate("ssl/rootCA.pem"); err != nil {
+	if ca, err := rootCA.ParseCertificate("ssl/rootCA.crt"); err != nil {
 		rootCA.InitRootCA(name)
 	} else {
 		log.Println(ca.IsCA)
 	}
 
-	cert, key, err := rootCA.IssueOneCert("debug.ssl.com.cn", []net.IP{net.IPv4(127, 0, 0, 1)}, []string{"localhost"})
+	cert, key, err := rootCA.IssueOneCert("debug.ssl.com.cn", []net.IP{net.IPv4(127, 0, 0, 1), net.IPv4(192, 168, 100, 87)}, []string{"localhost"})
 	if err == nil {
-		ioutil.WriteFile("ssl/server.cert", cert, 0700)
+		ioutil.WriteFile("ssl/server.crt", cert, 0700)
 		ioutil.WriteFile("ssl/server.key", key, 0700)
 	}
 
 	startDouble := true
 	if !startDouble {
-		rootCA.SampleWeb("ssl/server.cert", "ssl/server.key")
+		rootCA.SampleWeb("ssl/server.crt", "ssl/server.key")
 	} else {
 		fmt.Println(" start double")
 		cert, key, err := rootCA.IssueClient("xingyue")
 		if err == nil {
-			ioutil.WriteFile("ssl/client.cert", cert, 0700)
+			ioutil.WriteFile("ssl/client.crt", cert, 0700)
 			ioutil.WriteFile("ssl/client.key", key, 0700)
-			rootCA.MakePKCS12("ssl/client.cert", "ssl/client.key", "super", "ssl/client.p12")
-			rootCA.SampleDoubleWeb("ssl/server.cert", "ssl/server.key", "ssl/rootCA.pem")
+			pkBytes, err := rootCA.MakePKCS12("ssl/client.crt", "ssl/client.key", "super")
+			if err != nil {
+				log.Println(err)
+			} else {
+				ioutil.WriteFile("ssl/client.p12", pkBytes, 0600)
+			}
+			rootCA.SampleDoubleWeb("ssl/server.crt", "ssl/server.key", "ssl/rootCA.crt")
 		} else {
 			log.Println(err)
 		}
