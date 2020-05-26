@@ -8,15 +8,22 @@ import (
 	"crypto/x509/pkix"
 	"encoding/pem"
 	"io/ioutil"
-	"math/big"
 	"time"
 )
 
 // InitRootCA 初始化 根 CA 证书
 func InitRootCA(pkiName pkix.Name) error {
+
+	var (
+		err       error
+		ca        *x509.Certificate
+		caPrivKey *rsa.PrivateKey
+		caBytes   []byte
+	)
+
 	// set up our CA certificate
-	ca := &x509.Certificate{
-		SerialNumber:          big.NewInt(2019),
+	ca = &x509.Certificate{
+		SerialNumber:          SerialNumber(),
 		Subject:               pkiName,
 		NotBefore:             time.Now(),
 		NotAfter:              time.Now().AddDate(10, 0, 0),
@@ -27,14 +34,12 @@ func InitRootCA(pkiName pkix.Name) error {
 	}
 
 	// create our private and public key
-	caPrivKey, err := rsa.GenerateKey(rand.Reader, 4096)
-	if err != nil {
+	if caPrivKey, err = rsa.GenerateKey(rand.Reader, 4096); err != nil {
 		return err
 	}
 
 	// create the CA
-	caBytes, err := x509.CreateCertificate(rand.Reader, ca, ca, &caPrivKey.PublicKey, caPrivKey)
-	if err != nil {
+	if caBytes, err = x509.CreateCertificate(rand.Reader, ca, ca, &caPrivKey.PublicKey, caPrivKey); err != nil {
 		return err
 	}
 

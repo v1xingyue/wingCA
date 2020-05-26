@@ -8,19 +8,18 @@ import (
 	"crypto/x509/pkix"
 	"encoding/pem"
 	"fmt"
-	"math/big"
 	"net"
 	"time"
 )
 
-//IssueOneCert 使用自有CA 签发一个证书
+//IssueSite 使用自有CA 签发一个证书
 // 返回证书 key 的字节
-func IssueOneCert(host string, alternateIPs []net.IP, alternateDNS []string) ([]byte, []byte, error) {
+func IssueSite(host string, alternateIPs []net.IP, alternateDNS []string) ([]byte, []byte, error) {
 
 	var (
 		err error
 	)
-	rootCA, err := ParseCertificate(rootCACertPath)
+	rootCA, err := LoadCARoot()
 
 	rootCAKey, err := ParseKey(rootCAKeyPath, rootCAKeyPassword)
 
@@ -33,17 +32,18 @@ func IssueOneCert(host string, alternateIPs []net.IP, alternateDNS []string) ([]
 	}
 
 	template := x509.Certificate{
-		SerialNumber: big.NewInt(1),
+		SerialNumber: SerialNumber(),
 		Subject: pkix.Name{
 			CommonName: fmt.Sprintf("%s@%d", host, time.Now().Unix()),
 		},
 		NotBefore: time.Now(),
-		NotAfter:  time.Now().Add(time.Hour * 24 * 3),
+		NotAfter:  time.Now().Add(time.Hour * 24 * 90),
 
 		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 		BasicConstraintsValid: true,
 		IsCA:                  false,
+		CRLDistributionPoints: []string{"http://localhost/crl"},
 	}
 
 	if ip := net.ParseIP(host); ip != nil {
@@ -93,7 +93,7 @@ func IssueClient(clientName string) ([]byte, []byte, error) {
 	}
 
 	template := x509.Certificate{
-		SerialNumber: big.NewInt(1),
+		SerialNumber: SerialNumber(),
 		NotBefore:    time.Now(),
 		NotAfter:     time.Now().Add(time.Hour * 12),
 
