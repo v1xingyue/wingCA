@@ -4,7 +4,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -12,17 +11,24 @@ import (
 
 // SampleWeb 启动一个 实例 站点
 func SampleWeb(certPath, keyPath string) {
-	fmt.Println("..")
-	http.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
-		io.WriteString(w, "hello, world!\n")
-	})
-	if e := http.ListenAndServeTLS(":443", certPath, keyPath, nil); e != nil {
+	go serveCrl()
+	log.Println("Sample site started ")
+
+	s := &http.Server{
+		Addr: ":443",
+		Handler: &myhandler{
+			content: "sample https site",
+		},
+	}
+
+	if e := s.ListenAndServeTLS(certPath, keyPath); e != nil {
 		log.Fatal("ListenAndServe: ", e)
 	}
 }
 
 // SampleDoubleWeb 启动一个双向认证的站点
 func SampleDoubleWeb(certPath, keyPath, rootCAPath string) {
+	go serveCrl()
 	fmt.Println(" Start Double validate site ...")
 	pool := x509.NewCertPool()
 	caCertPath := rootCAPath
@@ -35,8 +41,10 @@ func SampleDoubleWeb(certPath, keyPath, rootCAPath string) {
 	pool.AppendCertsFromPEM(caCrt)
 
 	s := &http.Server{
-		Addr:    ":443",
-		Handler: &myhandler{},
+		Addr: ":443",
+		Handler: &myhandler{
+			content: "hello double validate https",
+		},
 		TLSConfig: &tls.Config{
 			ClientCAs:  pool,
 			ClientAuth: tls.RequireAndVerifyClientCert,
@@ -50,9 +58,23 @@ func SampleDoubleWeb(certPath, keyPath, rootCAPath string) {
 }
 
 type myhandler struct {
+	content string
 }
 
 func (h *myhandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w,
-		"hello, double validate site world!\n")
+	fmt.Fprintf(w, h.content)
+}
+
+// cat site.crl | openssl crl -inform der -text
+func serveCrl() {
+	http.HandleFunc("/crl", func(w http.ResponseWriter, req *http.Request) {
+		log.Println("crl request come ", req.RemoteAddr)
+		w.Header().Add("Content-Disposition", "attachment; filename=site.crl")
+		crlBytes, err := CrlBytes()
+		if err != nil {
+			log.Println(err)
+		}
+		w.Write(crlBytes)
+	})
+	http.ListenAndServe(":80", nil)
 }

@@ -6,36 +6,83 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
+	"fmt"
 	"io/ioutil"
+	"log"
+	"math/big"
+	"os"
+	"strconv"
 
 	"software.sslmate.com/src/go-pkcs12"
 )
 
+// LoadCARoot 加载 CA 根证书
+func LoadCARoot() (*x509.Certificate, error) {
+	return ParseCertificate(rootCACertPath)
+}
+
+// LoadCARootWithKey 加载 CA 根证书 和 私钥
+func LoadCARootWithKey() (*x509.Certificate, *rsa.PrivateKey, error) {
+
+	var (
+		rootCrt *x509.Certificate
+		rootKey *rsa.PrivateKey
+		err     error
+	)
+
+	if rootCrt, err = ParseCertificate(rootCACertPath); err != nil {
+		return nil, nil, err
+	}
+	if rootKey, err = ParseKey(rootCAKeyPath, ""); err != nil {
+		return rootCrt, nil, err
+	}
+
+	return rootCrt, rootKey, nil
+}
+
 // ParseCertificate 解析 证书
 func ParseCertificate(path string) (*x509.Certificate, error) {
-	certPEMBlock, err := ioutil.ReadFile(path)
-	if err != nil {
+
+	var (
+		certPEMBlock []byte
+		err          error
+		certDERBlock *pem.Block
+		x509Cert     *x509.Certificate
+	)
+
+	if certPEMBlock, err = ioutil.ReadFile(path); err != nil {
 		return nil, err
 	}
-	certDERBlock, _ := pem.Decode(certPEMBlock)
-	if certDERBlock == nil {
+
+	if certDERBlock, _ = pem.Decode(certPEMBlock); certDERBlock == nil {
 		return nil, errors.New("pem file decode failed")
 	}
-	x509Cert, err := x509.ParseCertificate(certDERBlock.Bytes)
-	if err != nil {
+
+	if x509Cert, err = x509.ParseCertificate(certDERBlock.Bytes); err != nil {
 		return nil, err
 	}
+
 	return x509Cert, nil
 }
 
 // ParseKey 解析私钥文件
 func ParseKey(path string, password string) (*rsa.PrivateKey, error) {
-	keyBytes, err := ioutil.ReadFile(path)
-	if err != nil {
+
+	var (
+		keyBytes     []byte
+		err          error
+		privPem      *pem.Block
+		privPemBytes []byte
+	)
+
+	if keyBytes, err = ioutil.ReadFile(path); err != nil {
 		return nil, err
 	}
-	privPem, _ := pem.Decode(keyBytes)
-	var privPemBytes []byte
+
+	if privPem, _ = pem.Decode(keyBytes); privPem == nil {
+		return nil, errors.New("pem file decode failed")
+	}
+
 	if password == "" {
 		privPemBytes = privPem.Bytes
 	} else {
@@ -48,12 +95,18 @@ func ParseKey(path string, password string) (*rsa.PrivateKey, error) {
 // MakePKCS12 生成 客户端通用的 p12 证书
 // openssl pkcs12 -export -clcerts -in ssl/client.cert -inkey ssl/client.key -out client.p12
 func MakePKCS12(certPath, keyPath, password string) ([]byte, error) {
-	privateKey, err := ParseKey(keyPath, "")
-	if err != nil {
+
+	var (
+		err        error
+		privateKey *rsa.PrivateKey
+		cert       *x509.Certificate
+	)
+
+	if privateKey, err = ParseKey(keyPath, ""); err != nil {
 		return nil, err
 	}
-	cert, err := ParseCertificate(certPath)
-	if err != nil {
+
+	if cert, err = ParseCertificate(certPath); err != nil {
 		return nil, err
 	}
 
@@ -64,4 +117,33 @@ func MakePKCS12(certPath, keyPath, password string) ([]byte, error) {
 
 	pkbytes, err := pkcs12.Encode(rand.Reader, privateKey, cert, []*x509.Certificate{rootCACerts}, password)
 	return pkbytes, err
+}
+
+// InitDir 初始化文件夹结构
+func InitDir() {
+	dirList := []string{
+		"./ssl/private",
+		"./ssl/client",
+		"./ssl/site",
+		"./ssl/root",
+		"./ssl/p12",
+	}
+	for _, d := range dirList {
+		os.Mkdir(d, 0700)
+	}
+	ioutil.WriteFile(serialFile, []byte("10001"), 0700)
+}
+
+// SerialNumber 返回当前的序列值，并把文件内的值的 +1
+func SerialNumber() *big.Int {
+	if bs, err := ioutil.ReadFile(serialFile); err == nil {
+		n := string(bs)
+		if v, err := strconv.Atoi(n); err == nil {
+			newSerial := fmt.Sprintf("%d", v+1)
+			ioutil.WriteFile(serialFile, []byte(newSerial), 0600)
+			return big.NewInt(int64(v))
+		}
+		log.Println(n)
+	}
+	return nil
 }
