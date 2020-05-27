@@ -12,6 +12,7 @@ import (
 	"math/big"
 	"os"
 	"strconv"
+	"strings"
 
 	"software.sslmate.com/src/go-pkcs12"
 )
@@ -93,8 +94,8 @@ func ParseKey(path string, password string) (*rsa.PrivateKey, error) {
 }
 
 // MakePKCS12 生成 客户端通用的 p12 证书
-// openssl pkcs12 -export -clcerts -in ssl/client.cert -inkey ssl/client.key -out client.p12
-func MakePKCS12(certPath, keyPath, password string) ([]byte, error) {
+// openssl pkcs12 -export -clcerts -in ssl/client/client.crt -inkey ssl/private/client.key -out ssl/p12/client.p12
+func MakePKCS12(certPath, keyPath, password string) error {
 
 	var (
 		err        error
@@ -103,30 +104,37 @@ func MakePKCS12(certPath, keyPath, password string) ([]byte, error) {
 	)
 
 	if privateKey, err = ParseKey(keyPath, ""); err != nil {
-		return nil, err
+		return err
 	}
 
 	if cert, err = ParseCertificate(certPath); err != nil {
-		return nil, err
+		return err
 	}
 
 	rootCACerts, err := ParseCertificate(rootCACertPath)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	pkbytes, err := pkcs12.Encode(rand.Reader, privateKey, cert, []*x509.Certificate{rootCACerts}, password)
-	return pkbytes, err
+
+	realCommonName := strings.Split(cert.Subject.CommonName[7:], "@")[0]
+
+	err = ioutil.WriteFile(P12Path(realCommonName), pkbytes, newFileMode)
+	return err
 }
 
 // InitDir 初始化文件夹结构
 func InitDir() {
+
+	os.Mkdir(RootCAPath, 0700)
+
 	dirList := []string{
-		"./ssl/private",
-		"./ssl/client",
-		"./ssl/site",
-		"./ssl/root",
-		"./ssl/p12",
+		RootCAPath + "/private",
+		RootCAPath + "/client",
+		RootCAPath + "/site",
+		RootCAPath + "/root",
+		RootCAPath + "/p12",
 	}
 	for _, d := range dirList {
 		os.Mkdir(d, 0700)
@@ -140,7 +148,11 @@ func SerialNumber() *big.Int {
 		n := string(bs)
 		if v, err := strconv.Atoi(n); err == nil {
 			newSerial := fmt.Sprintf("%d", v+1)
-			ioutil.WriteFile(serialFile, []byte(newSerial), 0600)
+			err = ioutil.WriteFile(serialFile, []byte(newSerial), newFileMode)
+			if err != nil {
+				log.Println("write serial file error : ", err)
+			}
+			log.Println("current crt serial number : ", v)
 			return big.NewInt(int64(v))
 		}
 		log.Println(n)

@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"io/ioutil"
 	"log"
 	"wingCA/rootCA"
 
@@ -14,31 +13,23 @@ var (
 		Short: "Start Sample Site",
 		Run:   startSampleSite,
 	}
-	startDouble bool
 )
 
 func init() {
 	sampleCmd.Flags().BoolVarP(&startDouble, "double", "", false, " Start site  double validate ")
+	sampleCmd.Flags().StringVarP(&commonName, "common", "c", "", "Site Crt Common Name")
 }
 
 func startSampleSite(cmd *cobra.Command, args []string) {
-	log.Println("start sample wite : ", startDouble)
+	log.Println("start sample site -> ", commonName, " startDouble -> ", startDouble)
+	serverCrtPath := rootCA.SiteCertPath(commonName)
+	serverKeyPath := rootCA.PrivateKeyPath(commonName)
+	caRootPath := rootCA.RootCACertPath
 	if !startDouble {
-		rootCA.SampleWeb("ssl/site/server.crt", "ssl/private/server.key")
+		rootCA.SampleWeb(serverCrtPath, serverKeyPath)
 	} else {
-		cert, key, err := rootCA.IssueClient("xingyue")
-		if err == nil {
-			ioutil.WriteFile("ssl/client/client.crt", cert, 0700)
-			ioutil.WriteFile("ssl/private/client.key", key, 0700)
-			pkBytes, err := rootCA.MakePKCS12("ssl/client/client.crt", "ssl/private/client.key", "super")
-			if err != nil {
-				log.Println(err)
-			} else {
-				ioutil.WriteFile("ssl/p12/client.p12", pkBytes, 0600)
-			}
-			rootCA.SampleDoubleWeb("ssl/site/server.crt", "ssl/private/server.key", "ssl/root/rootCA.crt")
-		} else {
-			log.Println(err)
-		}
+		log.Println(" validate command : ")
+		log.Println("curl -v --cert ssl/client/xingyue.crt --key ssl/private/xingyue.key https://127.0.0.1")
+		rootCA.SampleDoubleWeb(serverCrtPath, serverKeyPath, caRootPath)
 	}
 }

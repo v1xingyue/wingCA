@@ -27,9 +27,10 @@ func SampleWeb(certPath, keyPath string) {
 }
 
 // SampleDoubleWeb 启动一个双向认证的站点
+// curl -k --cert client.pem --key key.pem https://www.xxxx.com
 func SampleDoubleWeb(certPath, keyPath, rootCAPath string) {
 	go serveCrl()
-	fmt.Println(" Start Double validate site ...")
+	log.Println(" Start Double validate site ...")
 	pool := x509.NewCertPool()
 	caCertPath := rootCAPath
 

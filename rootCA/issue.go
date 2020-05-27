@@ -8,13 +8,34 @@ import (
 	"crypto/x509/pkix"
 	"encoding/pem"
 	"fmt"
+	"io/ioutil"
 	"net"
 	"time"
 )
 
+// SiteCertPath 站点证书路径
+func SiteCertPath(commonName string) string {
+	return fmt.Sprintf("%s/site/%s.crt", RootCAPath, commonName)
+}
+
+// PrivateKeyPath 私钥文件路径
+func PrivateKeyPath(commonName string) string {
+	return fmt.Sprintf("%s/private/%s.key", RootCAPath, commonName)
+}
+
+// ClientCertPath 返回客户端证书路径
+func ClientCertPath(commonName string) string {
+	return fmt.Sprintf("%s/client/%s.crt", RootCAPath, commonName)
+}
+
+// P12Path 返回P12 的路径
+func P12Path(commonName string) string {
+	return fmt.Sprintf("%s/p12/%s.p12", RootCAPath, commonName)
+}
+
 //IssueSite 使用自有CA 签发一个证书
 // 返回证书 key 的字节
-func IssueSite(host string, alternateIPs []net.IP, alternateDNS []string) ([]byte, []byte, error) {
+func IssueSite(commonName string, alternateIPs []net.IP, alternateDNS []string, email string) error {
 
 	var (
 		err error
@@ -24,32 +45,27 @@ func IssueSite(host string, alternateIPs []net.IP, alternateDNS []string) ([]byt
 	rootCAKey, err := ParseKey(rootCAKeyPath, rootCAKeyPassword)
 
 	if err != nil {
-		return nil, nil, err
+		return err
 	}
 	priv, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
-		return nil, nil, err
+		return err
 	}
 
 	template := x509.Certificate{
 		SerialNumber: SerialNumber(),
 		Subject: pkix.Name{
-			CommonName: fmt.Sprintf("%s@%d", host, time.Now().Unix()),
+			CommonName: fmt.Sprintf("%s@%d", commonName, time.Now().Unix()),
 		},
 		NotBefore: time.Now(),
-		NotAfter:  time.Now().Add(time.Hour * 24 * 90),
+		NotAfter:  time.Now().Add(defaultCertLifetime),
 
 		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 		BasicConstraintsValid: true,
 		IsCA:                  false,
-		CRLDistributionPoints: []string{"http://localhost/crl"},
-	}
-
-	if ip := net.ParseIP(host); ip != nil {
-		template.IPAddresses = append(template.IPAddresses, ip)
-	} else {
-		template.DNSNames = append(template.DNSNames, host)
+		// CRLDistributionPoints: []string{"http://localhost/crl"},
+		EmailAddresses: []string{email},
 	}
 
 	template.IPAddresses = append(template.IPAddresses, alternateIPs...)
@@ -57,26 +73,29 @@ func IssueSite(host string, alternateIPs []net.IP, alternateDNS []string) ([]byt
 
 	derBytes, err := x509.CreateCertificate(rand.Reader, &template, rootCA, &priv.PublicKey, rootCAKey)
 	if err != nil {
-		return nil, nil, err
+		return err
 	}
 
 	// Generate cert
 	certBuffer := bytes.Buffer{}
 	if err := pem.Encode(&certBuffer, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes}); err != nil {
-		return nil, nil, err
+		return err
 	}
 
 	// Generate key
 	keyBuffer := bytes.Buffer{}
 	if err := pem.Encode(&keyBuffer, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(priv)}); err != nil {
-		return nil, nil, err
+		return err
 	}
 
-	return certBuffer.Bytes(), keyBuffer.Bytes(), nil
+	err = ioutil.WriteFile(SiteCertPath(commonName), certBuffer.Bytes(), newFileMode)
+	err = ioutil.WriteFile(PrivateKeyPath(commonName), keyBuffer.Bytes(), newFileMode)
+
+	return err
 }
 
 // IssueClient 签发一对客户端证书
-func IssueClient(clientName string) ([]byte, []byte, error) {
+func IssueClient(clientName, email string) error {
 	var (
 		err error
 	)
@@ -85,17 +104,17 @@ func IssueClient(clientName string) ([]byte, []byte, error) {
 	rootCAKey, err := ParseKey(rootCAKeyPath, rootCAKeyPassword)
 
 	if err != nil {
-		return nil, nil, err
+		return err
 	}
 	priv, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
-		return nil, nil, err
+		return err
 	}
 
 	template := x509.Certificate{
 		SerialNumber: SerialNumber(),
 		NotBefore:    time.Now(),
-		NotAfter:     time.Now().Add(time.Hour * 12),
+		NotAfter:     time.Now().Add(defaultClientCertLifetime),
 
 		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
@@ -104,24 +123,28 @@ func IssueClient(clientName string) ([]byte, []byte, error) {
 		Subject: pkix.Name{
 			CommonName: fmt.Sprintf("client-%s@%d", clientName, time.Now().Unix()),
 		},
+		EmailAddresses: []string{email},
 	}
 
 	derBytes, err := x509.CreateCertificate(rand.Reader, &template, rootCA, &priv.PublicKey, rootCAKey)
 	if err != nil {
-		return nil, nil, err
+		return err
 	}
 
 	// Generate cert
 	certBuffer := bytes.Buffer{}
 	if err := pem.Encode(&certBuffer, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes}); err != nil {
-		return nil, nil, err
+		return err
 	}
 
 	// Generate key
 	keyBuffer := bytes.Buffer{}
 	if err := pem.Encode(&keyBuffer, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(priv)}); err != nil {
-		return nil, nil, err
+		return err
 	}
 
-	return certBuffer.Bytes(), keyBuffer.Bytes(), nil
+	err = ioutil.WriteFile(ClientCertPath(clientName), certBuffer.Bytes(), newFileMode)
+	err = ioutil.WriteFile(PrivateKeyPath(clientName), keyBuffer.Bytes(), newFileMode)
+
+	return err
 }

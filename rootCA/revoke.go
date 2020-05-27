@@ -29,7 +29,7 @@ func RevokeSiteCert(certPath string) error {
 	serial := cert.SerialNumber.Int64()
 
 	revokeMessage := fmt.Sprintf("%d,%d,%s\n", serial, time.Now().Unix(), cert.Subject.CommonName)
-	f, err = os.OpenFile(revokeListPath, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0600)
+	f, err = os.OpenFile(revokeListPath, os.O_APPEND|os.O_CREATE|os.O_RDWR, newFileMode)
 	if err != nil {
 		return err
 	}
@@ -50,7 +50,7 @@ func CrlBytes() ([]byte, error) {
 	}
 	revokeList := []pkix.RevokedCertificate{}
 
-	revokeListFile, err := os.OpenFile(revokeListPath, os.O_RDONLY, 0600)
+	revokeListFile, err := os.OpenFile(revokeListPath, os.O_RDONLY, newFileMode)
 	if err != nil {
 		return nil, err
 	}
