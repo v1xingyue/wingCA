@@ -25,6 +25,9 @@ type siteConfigT struct {
 var (
 	//Item 配置实例
 	Item = configT{}
+
+	// Version 软件版本
+	Version = "0.0.3"
 )
 
 // InitConfigFile 使用配置文件初始化配置
