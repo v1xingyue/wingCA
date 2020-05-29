@@ -1,6 +1,8 @@
 package cmd
 
-import "net"
+import (
+	"net"
+)
 
 var (
 	confirmInitCA bool
@@ -16,6 +18,7 @@ var (
 	siteIPs    []net.IP
 	withP12    bool
 	password   string
+	minutes    int64
 
 	// 启动示例站点需要的参数
 	startDouble bool

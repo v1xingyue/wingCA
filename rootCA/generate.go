@@ -13,7 +13,6 @@ import (
 
 // InitRootCA 初始化 根 CA 证书
 func InitRootCA(pkiName pkix.Name) error {
-
 	var (
 		err       error
 		ca        *x509.Certificate

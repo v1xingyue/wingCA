@@ -2,6 +2,7 @@ package main
 
 import (
 	"wingCA/cmd"
+	_ "wingCA/config"
 	"wingCA/rootCA"
 )
 

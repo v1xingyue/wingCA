@@ -30,7 +30,7 @@ func initRootCA(cmd *cobra.Command, args []string) {
 	if !confirmInitCA {
 		log.Println("Must Add --confirm flag confirm init CA Structure.")
 	} else {
-		log.Println("Begin Init Root CA ")
+		log.Println("Begin Init Root CA")
 		rootCA.InitDir()
 		name := pkix.Name{
 			Country:       []string{"CN"},
@@ -43,7 +43,7 @@ func initRootCA(cmd *cobra.Command, args []string) {
 		}
 		log.Println("Your CA Name Info : ", name)
 		if rootCA.InitRootCA(name) == nil {
-			log.Println("Your CA Root Have Been Put ssl/root/rootCA.crt ")
+			log.Printf("Your CA Root Have Been Put  %s/root/rootCA.crt \n ", rootCA.RootCAPath)
 		}
 	}
 }
