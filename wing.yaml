@@ -7,3 +7,17 @@ Wing :
     Site:
         # 7776000 = 86400 * 90 
         DefaultLifeTimeSeconds : 7776000
+
+## 提供 HTTP 基本服务
+## 下载 CA 根证书
+ApiConfig :
+    BindHost : 0.0.0.0
+    BindPort : 80
+
+## Smtp 邮箱配置
+SMTPConfig :
+    Host : your.smtp.host
+    Port : 25 
+    Email : your@smtp.host.com
+    Password : youremailpassword
+    Nick : yournick
