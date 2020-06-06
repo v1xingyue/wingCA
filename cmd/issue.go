@@ -19,7 +19,7 @@ var (
 
 func init() {
 	issueCmd.Flags().StringVarP(&issueType, "type", "t", "", "Issue Type site Or client.")
-	issueCmd.Flags().StringVarP(&commonName, "common", "c", "", "Common Name In You Cert.")
+	issueCmd.Flags().StringVarP(&commonName, "common", "", "", "Common Name In You Cert.")
 	issueCmd.Flags().StringVarP(&email, "email", "", "", "Email In You Cert.")
 	issueCmd.Flags().StringArrayVarP(&siteNames, "site", "", []string{}, "Domains In Your Cert.")
 	issueCmd.Flags().StringArrayVarP(&siteIPStr, "ip", "", []string{}, "IP Addrs In Your Cert.")

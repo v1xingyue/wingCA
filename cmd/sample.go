@@ -17,7 +17,7 @@ var (
 
 func init() {
 	sampleCmd.Flags().BoolVarP(&startDouble, "double", "", false, " Start site  double validate ")
-	sampleCmd.Flags().StringVarP(&commonName, "common", "c", "", "Site Crt Common Name")
+	sampleCmd.Flags().StringVarP(&commonName, "common", "", "", "Site Crt Common Name")
 }
 
 func startSampleSite(cmd *cobra.Command, args []string) {

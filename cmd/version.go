@@ -12,5 +12,8 @@ var versionCmd = &cobra.Command{
 	Short: "Print the version  of wingCA",
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Printf("    wingCA v%s ^_^ \n", config.Version)
+		if verbose {
+			fmt.Println(config.Item)
+		}
 	},
 }

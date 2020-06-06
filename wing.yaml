@@ -1,6 +1,6 @@
 ## 这是一个示例配置文件
 Wing :
-    RootCAPath: "./newssl"
+    RootCAPath: "./ssl"
     Client :
         # 2592000 = 86400 * 30
         DefaultLifeTimeSeconds : 2592000 
