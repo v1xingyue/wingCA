@@ -12,7 +12,7 @@ Wing :
 ## 下载 CA 根证书
 ApiConfig :
     BindHost : 0.0.0.0
-    BindPort : 80
+    BindPort : 8080
 
 ## Smtp 邮箱配置
 SMTPConfig :

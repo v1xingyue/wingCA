@@ -1,3 +1,4 @@
 wingCA
 ssl/*
 secret.yaml
+.DS_Store

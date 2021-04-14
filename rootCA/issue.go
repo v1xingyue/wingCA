@@ -11,6 +11,7 @@ import (
 	"io/ioutil"
 	"net"
 	"time"
+	"wingCA/config"
 )
 
 // SiteCertPath 站点证书路径
@@ -42,7 +43,7 @@ func IssueSite(commonName string, alternateIPs []net.IP, alternateDNS []string, 
 	)
 	rootCA, err := LoadCARoot()
 
-	rootCAKey, err := ParseKey(rootCAKeyPath, rootCAKeyPassword)
+	rootCAKey, err := ParseKey(rootCAKeyPath, config.Default.RootCAPassword)
 
 	if err != nil {
 		return err
@@ -84,7 +85,15 @@ func IssueSite(commonName string, alternateIPs []net.IP, alternateDNS []string, 
 
 	// Generate key
 	keyBuffer := bytes.Buffer{}
-	if err := pem.Encode(&keyBuffer, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(priv)}); err != nil {
+
+	block := &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(priv)}
+
+	block, err = x509.EncryptPEMBlock(rand.Reader, block.Type, block.Bytes, []byte(config.Default.KeyPassword), x509.PEMCipherAES256)
+	if err != nil {
+		return err
+	}
+
+	if err := pem.Encode(&keyBuffer, block); err != nil {
 		return err
 	}
 
@@ -101,7 +110,7 @@ func IssueClient(clientName, email string) error {
 	)
 	rootCA, err := ParseCertificate(rootCACertPath)
 
-	rootCAKey, err := ParseKey(rootCAKeyPath, rootCAKeyPassword)
+	rootCAKey, err := ParseKey(rootCAKeyPath, config.Default.RootCAPassword)
 
 	if err != nil {
 		return err
@@ -139,7 +148,14 @@ func IssueClient(clientName, email string) error {
 
 	// Generate key
 	keyBuffer := bytes.Buffer{}
-	if err := pem.Encode(&keyBuffer, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(priv)}); err != nil {
+	block := &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(priv)}
+
+	// block, err = x509.EncryptPEMBlock(rand.Reader, block.Type, block.Bytes, []byte(config.Default.KeyPassword), x509.PEMCipherAES256)
+	// if err != nil {
+	// 	return err
+	// }
+
+	if err := pem.Encode(&keyBuffer, block); err != nil {
 		return err
 	}
 

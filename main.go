@@ -1,12 +1,18 @@
 package main
 
 import (
+	"log"
 	"wingCA/cmd"
 	_ "wingCA/config"
-	"wingCA/rootCA"
+)
+
+var (
+	// ComileTime 设置软件版本
+	ComileTime = ""
 )
 
 func main() {
-	rootCA.CrlBytes()
+	log.Println(ComileTime)
+	// rootCA.CrlBytes()
 	cmd.Main()
 }

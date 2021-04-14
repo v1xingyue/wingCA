@@ -12,6 +12,8 @@ var (
 
 	// Version 软件版本
 	Version = "0.0.3"
+
+	BuildTime = ""
 )
 
 // InitConfigFile 使用配置文件初始化配置

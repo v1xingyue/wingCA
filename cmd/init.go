@@ -3,6 +3,7 @@ package cmd
 import (
 	"crypto/x509/pkix"
 	"log"
+	"wingCA/config"
 	"wingCA/rootCA"
 
 	"github.com/spf13/cobra"
@@ -18,12 +19,12 @@ var (
 
 func init() {
 	initCmd.Flags().BoolVarP(&confirmInitCA, "confirm", "", false, "confirm init CA Structure.")
-	initCmd.Flags().StringVarP(&name, "name", "n", "ArkRootCA", "CA Name You Will Created.")
-	initCmd.Flags().StringVarP(&org, "org", "o", "Ryan Ark Center", "Organization Name In Your CA.")
-	initCmd.Flags().StringVarP(&province, "province", "p", "Beijing", "Province In Your CA.")
-	initCmd.Flags().StringVarP(&locality, "locality", "l", "Beijing", "Locality In Your CA.")
-	initCmd.Flags().StringVarP(&street, "street", "s", "NoWhere Road 9+3/4 Site Corner", "Locality In Your CA.")
-	initCmd.Flags().StringVarP(&postcode, "postcode", "", "061219", "Postcode In Your CA.")
+	initCmd.Flags().StringVarP(&name, "name", "n", config.Default.Name, "CA Name You Will Created.")
+	initCmd.Flags().StringVarP(&org, "org", "o", config.Default.Org, "Organization Name In Your CA.")
+	initCmd.Flags().StringVarP(&province, "province", "p", config.Default.Province, "Province In Your CA.")
+	initCmd.Flags().StringVarP(&locality, "locality", "l", config.Default.Locality, "Locality In Your CA.")
+	initCmd.Flags().StringVarP(&street, "street", "s", config.Default.Street, "Locality In Your CA.")
+	initCmd.Flags().StringVarP(&postcode, "postcode", "", config.Default.Postcode, "Postcode In Your CA.")
 }
 
 func initRootCA(cmd *cobra.Command, args []string) {

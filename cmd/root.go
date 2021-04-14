@@ -10,7 +10,8 @@ import (
 
 var (
 	rootCmd = &cobra.Command{
-		Use: "wingCA",
+		Use:     "wingCA",
+		Version: "0.0.0",
 	}
 	verbose    bool
 	configFile string
@@ -19,7 +20,8 @@ var (
 func init() {
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "verbose output")
 	rootCmd.PersistentFlags().StringVarP(&configFile, "config", "c", "wing.yaml", "config file path")
-	rootCmd.AddCommand(versionCmd, initCmd, issueCmd, sampleCmd, dummpyCmd)
+	rootCmd.AddCommand(versionCmd, initCmd, issueCmd, sampleCmd, dummpyCmd, adminCommand)
+
 }
 
 // Main 命令主入口

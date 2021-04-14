@@ -12,7 +12,6 @@ var (
 	rootCAKeyPath  = RootCAPath + "/private/rootCA.key"
 	rootCACertPath = RootCAPath + "/root/rootCA.crt"
 
-	rootCAKeyPassword         = ""
 	serialFile                = RootCAPath + "/serial"
 	revokeListPath            = RootCAPath + "/revokelist"
 	crlLifetime               = 3600 * time.Second

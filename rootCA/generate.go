@@ -9,6 +9,7 @@ import (
 	"encoding/pem"
 	"io/ioutil"
 	"time"
+	"wingCA/config"
 )
 
 // InitRootCA 初始化 根 CA 证书
@@ -18,6 +19,7 @@ func InitRootCA(pkiName pkix.Name) error {
 		ca        *x509.Certificate
 		caPrivKey *rsa.PrivateKey
 		caBytes   []byte
+		block     *pem.Block
 	)
 
 	// set up our CA certificate
@@ -42,20 +44,29 @@ func InitRootCA(pkiName pkix.Name) error {
 		return err
 	}
 
-	// pem encode
-	caPEM := new(bytes.Buffer)
-	pem.Encode(caPEM, &pem.Block{
+	block = &pem.Block{
 		Type:  "CERTIFICATE",
 		Bytes: caBytes,
-	})
+	}
+
+	// pem encode
+	caPEM := new(bytes.Buffer)
+	pem.Encode(caPEM, block)
 
 	ioutil.WriteFile(rootCACertPath, caPEM.Bytes(), 0755)
 
-	caPrivKeyPEM := new(bytes.Buffer)
-	pem.Encode(caPrivKeyPEM, &pem.Block{
+	block = &pem.Block{
 		Type:  "RSA PRIVATE KEY",
 		Bytes: x509.MarshalPKCS1PrivateKey(caPrivKey),
-	})
+	}
+
+	block, err = x509.EncryptPEMBlock(rand.Reader, block.Type, block.Bytes, []byte(config.Default.RootCAPassword), x509.PEMCipherAES256)
+	if err != nil {
+		return err
+	}
+
+	caPrivKeyPEM := new(bytes.Buffer)
+	pem.Encode(caPrivKeyPEM, block)
 
 	ioutil.WriteFile(rootCAKeyPath, caPrivKeyPEM.Bytes(), 0700)
 	return nil
