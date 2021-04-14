@@ -13,6 +13,10 @@ import (
 	"wingCA/config"
 )
 
+var (
+	oidEmailAddress = asn1.ObjectIdentifier{1, 2, 840, 113549, 1, 9, 1}
+)
+
 func parseCSRContent(buffer []byte) {
 	var (
 		csrBlock *pem.Block
@@ -31,16 +35,16 @@ func parseCSRContent(buffer []byte) {
 		log.Println(x509CSR.DNSNames)
 		log.Println(x509CSR.IPAddresses)
 	}
-
 }
 
-var (
-	oidEmailAddress = asn1.ObjectIdentifier{1, 2, 840, 113549, 1, 9, 1}
-)
-
 // commonName 可以是 IP 或者 域名
-func makeCSR(emailAddress, commonName string, names []string, addrs []net.IP) []byte {
-	keyBytes, _ := rsa.GenerateKey(rand.Reader, 1024)
+func makeCSR(emailAddress, commonName string, names []string, addrs []net.IP) ([]byte, []byte) {
+
+	var (
+		err error
+	)
+
+	keyPri, _ := rsa.GenerateKey(rand.Reader, 1024)
 
 	subj := pkix.Name{
 		CommonName:         commonName,
@@ -65,7 +69,20 @@ func makeCSR(emailAddress, commonName string, names []string, addrs []net.IP) []
 	}
 
 	csrBuffer := new(bytes.Buffer)
-	csrBytes, _ := x509.CreateCertificateRequest(rand.Reader, &template, keyBytes)
+	csrBytes, _ := x509.CreateCertificateRequest(rand.Reader, &template, keyPri)
 	pem.Encode(csrBuffer, &pem.Block{Type: "CERTIFICATE REQUEST", Bytes: csrBytes})
-	return csrBuffer.Bytes()
+
+	priKeyBuffer := bytes.Buffer{}
+	block := &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(keyPri)}
+
+	block, err = x509.EncryptPEMBlock(rand.Reader, block.Type, block.Bytes, []byte(config.Default.KeyPassword), x509.PEMCipherAES256)
+	if err != nil {
+		return nil, nil
+	}
+
+	if err := pem.Encode(&priKeyBuffer, block); err != nil {
+		return nil, nil
+	}
+
+	return csrBuffer.Bytes(), priKeyBuffer.Bytes()
 }
