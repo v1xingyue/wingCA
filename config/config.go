@@ -11,7 +11,7 @@ var (
 	Item = configT{}
 
 	// Version 软件版本
-	Version = "0.0.3"
+	Version = "0.0.5"
 
 	BuildTime = ""
 )
