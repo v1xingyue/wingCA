@@ -22,4 +22,5 @@ var (
 
 	// 启动示例站点需要的参数
 	startDouble bool
+	withMiddle  bool
 )

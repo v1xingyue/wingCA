@@ -8,9 +8,11 @@ import (
 
 var (
 	// RootCAPath 根证书文件夹路径
-	RootCAPath     = "./ssl"
-	rootCAKeyPath  = RootCAPath + "/private/rootCA.key"
-	rootCACertPath = RootCAPath + "/root/rootCA.crt"
+	RootCAPath       = "./ssl"
+	rootCAKeyPath    = RootCAPath + "/private/rootCA.key"
+	rootCACertPath   = RootCAPath + "/root/rootCA.crt"
+	middleCAKeyPath  = RootCAPath + "/private/rootCAMiddle.key"
+	middleCACertPath = RootCAPath + "/middle/rootCAMiddle.crt"
 
 	serialFile                = RootCAPath + "/serial"
 	revokeListPath            = RootCAPath + "/revokelist"

@@ -25,6 +25,7 @@ func init() {
 	initCmd.Flags().StringVarP(&locality, "locality", "l", config.Default.Locality, "Locality In Your CA.")
 	initCmd.Flags().StringVarP(&street, "street", "s", config.Default.Street, "Locality In Your CA.")
 	initCmd.Flags().StringVarP(&postcode, "postcode", "", config.Default.Postcode, "Postcode In Your CA.")
+	initCmd.Flags().BoolVarP(&withMiddle, "withMiddle", "", false, "Switch to init with middle certificate .")
 }
 
 func initRootCA(cmd *cobra.Command, args []string) {
@@ -45,6 +46,14 @@ func initRootCA(cmd *cobra.Command, args []string) {
 		log.Println("Your CA Name Info : ", name)
 		if rootCA.InitRootCA(name) == nil {
 			log.Printf("Your CA Root Have Been Put  %s/root/rootCA.crt \n ", rootCA.RootCAPath)
+		}
+
+		if withMiddle {
+			name.CommonName += "_Middle"
+			log.Println("Make middle certificate : ", name)
+			if rootCA.InitMiddle(name) == nil {
+				log.Printf("Your CA Middle Root Have Been Put  %s/middle/rootCAMiddle.crt \n ", rootCA.RootCAPath)
+			}
 		}
 	}
 }

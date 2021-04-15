@@ -35,7 +35,7 @@ func InitRootCA(pkiName pkix.Name) error {
 	}
 
 	// create our private and public key
-	if caPrivKey, err = rsa.GenerateKey(rand.Reader, 4096); err != nil {
+	if caPrivKey, err = rsa.GenerateKey(rand.Reader, config.Default.KeyLen); err != nil {
 		return err
 	}
 
@@ -69,5 +69,66 @@ func InitRootCA(pkiName pkix.Name) error {
 	pem.Encode(caPrivKeyPEM, block)
 
 	ioutil.WriteFile(rootCAKeyPath, caPrivKeyPEM.Bytes(), 0700)
+	return nil
+}
+
+func InitMiddle(middleName pkix.Name) error {
+	var (
+		err error
+	)
+	rootCA, err := LoadCARoot()
+
+	rootCAKey, err := ParseKey(rootCAKeyPath, config.Default.RootCAPassword)
+
+	if err != nil {
+		return err
+	}
+	priv, err := rsa.GenerateKey(rand.Reader, config.Default.KeyLen)
+	if err != nil {
+		return err
+	}
+
+	template := x509.Certificate{
+		SerialNumber: SerialNumber(),
+		Subject:      middleName,
+		NotBefore:    time.Now(),
+		NotAfter:     time.Now().Add(defaultCertLifetime),
+
+		ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
+		KeyUsage:    x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
+
+		BasicConstraintsValid: true,
+		IsCA:                  true,
+		// CRLDistributionPoints: []string{"http://localhost/crl"},
+		// EmailAddresses: []string{email},
+	}
+
+	derBytes, err := x509.CreateCertificate(rand.Reader, &template, rootCA, &priv.PublicKey, rootCAKey)
+	if err != nil {
+		return err
+	}
+
+	// Generate cert
+	certBuffer := bytes.Buffer{}
+	if err := pem.Encode(&certBuffer, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes}); err != nil {
+		return err
+	}
+
+	// Generate key
+	keyBuffer := bytes.Buffer{}
+
+	block := &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(priv)}
+
+	block, err = x509.EncryptPEMBlock(rand.Reader, block.Type, block.Bytes, []byte(config.Default.KeyPassword), x509.PEMCipherAES256)
+	if err != nil {
+		return err
+	}
+
+	if err := pem.Encode(&keyBuffer, block); err != nil {
+		return err
+	}
+
+	err = ioutil.WriteFile(middleCACertPath, certBuffer.Bytes(), newFileMode)
+	err = ioutil.WriteFile(middleCAKeyPath, keyBuffer.Bytes(), newFileMode)
 	return nil
 }

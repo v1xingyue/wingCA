@@ -9,10 +9,16 @@ import (
 	"encoding/pem"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net"
 	"time"
 	"wingCA/config"
 )
+
+// MiddleCertPath 中间证书路径
+func MiddleCertPath(commonName string) string {
+	return fmt.Sprintf("%s/middle/%s.crt", RootCAPath, commonName)
+}
 
 // SiteCertPath 站点证书路径
 func SiteCertPath(commonName string) string {
@@ -39,16 +45,20 @@ func P12Path(commonName string) string {
 func IssueSite(commonName string, alternateIPs []net.IP, alternateDNS []string, email string) error {
 
 	var (
-		err error
+		err       error
+		parentCA  *x509.Certificate
+		parentKey *rsa.PrivateKey
 	)
-	rootCA, err := LoadCARoot()
 
-	rootCAKey, err := ParseKey(rootCAKeyPath, config.Default.RootCAPassword)
+	parentCA, err = LoadParent()
 
 	if err != nil {
+		log.Println(err)
 		return err
 	}
-	priv, err := rsa.GenerateKey(rand.Reader, 2048)
+
+	parentKey, err = LoadParentKey()
+	priv, err := rsa.GenerateKey(rand.Reader, config.Default.KeyLen)
 	if err != nil {
 		return err
 	}
@@ -72,7 +82,7 @@ func IssueSite(commonName string, alternateIPs []net.IP, alternateDNS []string, 
 	template.IPAddresses = append(template.IPAddresses, alternateIPs...)
 	template.DNSNames = append(template.DNSNames, alternateDNS...)
 
-	derBytes, err := x509.CreateCertificate(rand.Reader, &template, rootCA, &priv.PublicKey, rootCAKey)
+	derBytes, err := x509.CreateCertificate(rand.Reader, &template, parentCA, &priv.PublicKey, parentKey)
 	if err != nil {
 		return err
 	}
@@ -108,14 +118,14 @@ func IssueClient(clientName, email string) error {
 	var (
 		err error
 	)
-	rootCA, err := ParseCertificate(rootCACertPath)
 
-	rootCAKey, err := ParseKey(rootCAKeyPath, config.Default.RootCAPassword)
+	parentCA, err := LoadParent()
+	parentKey, err := LoadParentKey()
 
 	if err != nil {
 		return err
 	}
-	priv, err := rsa.GenerateKey(rand.Reader, 2048)
+	priv, err := rsa.GenerateKey(rand.Reader, config.Default.KeyLen)
 	if err != nil {
 		return err
 	}
@@ -135,7 +145,7 @@ func IssueClient(clientName, email string) error {
 		EmailAddresses: []string{email},
 	}
 
-	derBytes, err := x509.CreateCertificate(rand.Reader, &template, rootCA, &priv.PublicKey, rootCAKey)
+	derBytes, err := x509.CreateCertificate(rand.Reader, &template, parentCA, &priv.PublicKey, parentKey)
 	if err != nil {
 		return err
 	}

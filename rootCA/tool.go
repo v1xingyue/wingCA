@@ -13,9 +13,31 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"wingCA/config"
 
 	"software.sslmate.com/src/go-pkcs12"
 )
+
+func LoadParentKey() (*rsa.PrivateKey, error) {
+	if _, err := os.Open(middleCACertPath); err == nil {
+		log.Println("use middle key ....")
+		return ParseKey(middleCAKeyPath, config.Default.KeyPassword)
+	}
+	return ParseKey(rootCAKeyPath, config.Default.RootCAPassword)
+}
+
+// LoadParent 加载需要签名的证书，如果存在中间证书，那么使用中间证书签名
+func LoadParent() (*x509.Certificate, error) {
+	if _, err := os.Open(middleCACertPath); err == nil {
+		return LoadMiddle()
+	}
+	return LoadCARoot()
+}
+
+// LoadMiddle 加载中间证书
+func LoadMiddle() (*x509.Certificate, error) {
+	return ParseCertificate(middleCACertPath)
+}
 
 // LoadCARoot 加载 CA 根证书
 func LoadCARoot() (*x509.Certificate, error) {
@@ -69,6 +91,7 @@ func ParseCertificate(path string) (*x509.Certificate, error) {
 // ParseKey 解析私钥文件
 func ParseKey(path string, password string) (*rsa.PrivateKey, error) {
 
+	log.Println("parse private key : ", path, "with password ? ", password != "")
 	var (
 		keyBytes     []byte
 		err          error
@@ -88,6 +111,9 @@ func ParseKey(path string, password string) (*rsa.PrivateKey, error) {
 		privPemBytes = privPem.Bytes
 	} else {
 		privPemBytes, err = x509.DecryptPEMBlock(privPem, []byte(password))
+		if err != nil {
+			log.Println("decrypt pem error : ", err)
+		}
 	}
 
 	return x509.ParsePKCS1PrivateKey(privPemBytes)
@@ -135,6 +161,7 @@ func InitDir() {
 		RootCAPath + "/site",
 		RootCAPath + "/root",
 		RootCAPath + "/p12",
+		RootCAPath + "/middle",
 	}
 	for _, d := range dirList {
 		os.Mkdir(d, 0700)

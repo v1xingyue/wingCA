@@ -39,6 +39,11 @@ func issueStart(cmd *cobra.Command, args []string) {
 }
 
 func issueSite() {
+
+	var (
+		err error
+	)
+
 	log.Println("Issue Site : \n Names : ", siteNames, "\nips:", siteIPStr, "\nemail:", email, "\ncommonName:", commonName)
 	log.Println("..")
 
@@ -55,12 +60,16 @@ func issueSite() {
 		}
 	}
 
-	if rootCA.IssueSite(commonName, siteIPs, siteNames, email) == nil {
+	if err = rootCA.IssueSite(commonName, siteIPs, siteNames, email); err == nil {
 		log.Printf(
 			"Issue Success !\nCert Path : %s \n Key Path : %s\n",
 			rootCA.SiteCertPath(commonName),
 			rootCA.PrivateKeyPath(commonName),
 		)
+	}
+
+	if err != nil {
+		log.Println(err)
 	}
 }
 
