@@ -6,6 +6,7 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"io/ioutil"
+	"os"
 	"time"
 )
 
@@ -48,4 +49,15 @@ func UnWrapEncryptKey(kfile, pass string) ([]byte, error) {
 		}
 	}
 	return nil, err
+}
+
+func appendMiddleCrt(filename string) {
+	middleBytes, err := ioutil.ReadFile(middleCACertPath)
+	if err == nil {
+		f, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY, 0600)
+		defer f.Close()
+		if err == nil {
+			f.Write(middleBytes)
+		}
+	}
 }

@@ -13,7 +13,7 @@ import (
 func confirmServiceSSL() {
 	if _, err := os.Open(rootCA.SiteCertPath(config.Item.Wing.Domain)); err != nil {
 		log.Printf(
-			"may need this command : \n\n./wingCA issue --type site --email admin@ssl.wingca.com.cn  --common %s --site %s \n\n",
+			"may need this command : \n\n./wingCA issue --type site --email admin@ssl.wingca.com.cn  --common %s --site %s --site localhost \n\n",
 			config.Item.Wing.Domain,
 			config.Item.Wing.Domain,
 		)
