@@ -7,6 +7,7 @@ Wing :
     Site:
         # 7776000 = 86400 * 90 
         DefaultLifeTimeSeconds : 7776000
+    Domain: ssl.wingca.com.cn
 
 ## 提供 HTTP 基本服务
 ## 下载 CA 根证书

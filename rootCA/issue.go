@@ -108,6 +108,7 @@ func IssueSite(commonName string, alternateIPs []net.IP, alternateDNS []string, 
 	}
 
 	err = ioutil.WriteFile(SiteCertPath(commonName), certBuffer.Bytes(), newFileMode)
+
 	err = ioutil.WriteFile(PrivateKeyPath(commonName), keyBuffer.Bytes(), newFileMode)
 
 	return err

@@ -26,7 +26,7 @@ func init() {
 
 // Main 命令主入口
 func Main() {
-	fmt.Println("")
+	fmt.Println("Start wingCA , configFile : ", configFile)
 	config.InitConfigFile(configFile)
 	rootCA.InitConfigParamas()
 	rootCmd.Execute()

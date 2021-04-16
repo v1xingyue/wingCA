@@ -13,6 +13,7 @@ type apiCconfigT struct {
 
 type wingConfigT struct {
 	RootCAPath string        `yaml:"RootCAPath"`
+	Domain     string        `yaml:"Domain"`
 	Client     clientConfigT `yaml:"Client"`
 	Site       siteConfigT   `yaml:"Site"`
 }
