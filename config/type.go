@@ -1,12 +1,12 @@
 package config
 
 type configT struct {
-	Wing       wingConfigT `yaml:"Wing"`
-	APIConfig  apiCconfigT `yaml:"ApiConfig"`
-	SMTPConfig smtpConfigT `yaml:"SMTPConfig"`
+	Wing        wingConfigT   `yaml:"Wing"`
+	BasicConfig basicCconfigT `yaml:"BasicConfig"`
+	SMTPConfig  smtpConfigT   `yaml:"SMTPConfig"`
 }
 
-type apiCconfigT struct {
+type basicCconfigT struct {
 	BindHost string `yaml:"BindHost"`
 	BindPort int    `yaml:"BindPort"`
 }

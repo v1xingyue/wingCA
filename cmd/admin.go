@@ -1,9 +1,7 @@
 package cmd
 
 import (
-	"log"
 	"wingCA/api"
-	"wingCA/config"
 
 	"github.com/spf13/cobra"
 )
@@ -17,8 +15,6 @@ var (
 )
 
 func startApp(cmd *cobra.Command, args []string) {
-	log.Printf(
-		"start admin application at %s:%d \n", config.Item.APIConfig.BindHost, config.Item.APIConfig.BindPort)
 	api.StartDownloadRootCA()
 	api.StartSSL()
 }

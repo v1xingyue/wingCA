@@ -21,7 +21,9 @@ func confirmServiceSSL() {
 	}
 }
 
-func sslHandler(w http.ResponseWriter, r *http.Request) {
+type caServiceHandler struct{}
+
+func (cs *caServiceHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("OK"))
 }
 
@@ -49,6 +51,7 @@ func StartSSL() {
 	server := http.Server{
 		TLSConfig: tlsConfig,
 		Addr:      ":443",
+		Handler:   &caServiceHandler{},
 	}
 
 	err = server.ListenAndServeTLS("", "")

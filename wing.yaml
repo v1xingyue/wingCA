@@ -11,8 +11,8 @@ Wing :
 
 ## 提供 HTTP 基本服务
 ## 下载 CA 根证书
-ApiConfig :
-    BindHost : 0.0.0.0
+BasicConfig :
+    BindHost : 10.222.28.7
     BindPort : 8080
 
 ## Smtp 邮箱配置
